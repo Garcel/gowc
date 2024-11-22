@@ -1,0 +1,27 @@
+---
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions: read-all
+
+jobs:
+  golangci:
+    strategy:
+      matrix:
+        go: ['1.23']
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    name: lint
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-go@41dfa10bad2bb2ae585af6ee5bb4d7d973ad74ed
+        with:
+          go-version: ${{ matrix.go }}
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@971e284b6050e8a5849b72094c50ab08da042db8
+        with:
+          version: v1.62
