@@ -9,7 +9,7 @@ on:
 permissions: read-all
 
 jobs:
-  golangci:
+  build:
     strategy:
       matrix:
         go: ['1.23']
@@ -18,11 +18,49 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
       - uses: actions/setup-go@41dfa10bad2bb2ae585af6ee5bb4d7d973ad74ed
         with:
-          go-version: ${{ matrix.go }}
+          go-version: ${{ matrix.go }} # Specify your Go version here
+
+      - name: Cache Go modules
+        uses: actions/cache@6849a6489940f00c2f30c0fb92c6274307ccb58a
+        with:
+          path: |
+            ~/.cache/go-build
+            /go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Install dependencies
+        run: go mod download
+
+      - name: Run all tests
+        run: go test -v ./...
+
+      - name: Generate test coverage report
+        run: go test -coverprofile=coverage.out ./...
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882
+        with:
+          name: coverage-report
+          path: coverage.out
+
       - name: golangci-lint
         uses: golangci/golangci-lint-action@971e284b6050e8a5849b72094c50ab08da042db8
         with:
           version: v1.62
           args: --timeout=10m
+
+      - name: Run Gosec Security Scanner
+        uses: securego/gosec@d4617f51baf75f4f809066386a4f9d27b3ac3e46
+        with:
+          args: '-fmt=json -out=scan.json -stdout -verbose=text *.go -exclude-generated ./...'
+
+      - name: Upload Gosec results
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882
+        with:
+          name: gosec-results
+          path: scan.json
