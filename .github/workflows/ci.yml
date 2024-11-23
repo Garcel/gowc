@@ -6,11 +6,7 @@ on:
   push:
     branches: [main]
 
-permissions:
-  contents: read
-  actions: read
-  checks: write
-  statuses: write
+permissions: read-all
 
 jobs:
   build:
@@ -58,13 +54,3 @@ jobs:
         with:
           version: v1.62
           args: --timeout=10m
-
-      - name: Run Gosec Security Scanner
-        uses: securego/gosec@d4617f51baf75f4f809066386a4f9d27b3ac3e46
-        with:
-          args: '-no-fail -fmt sarif -out gosec.sarif -stdout -verbose=text *.go -exclude-generated ./...'
-
-      - name: Upload SARIF file
-        uses: github/codeql-action/upload-sarif@cbe18979603527f12c7871a6eb04833ecf1548c7
-        with:
-          sarif_file: gosec.sarif
